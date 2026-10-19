@@ -1,0 +1,105 @@
+import type { DemoTrip } from "./types";
+
+export const demoTrip: DemoTrip = {
+  id: "demo-singapore",
+  title: "新加坡 · 日光与夜色",
+  destination: "新加坡",
+  dateRange: "10 月 12 日 — 10 月 15 日",
+  timezone: "GMT+8",
+  hotel: "Bugis · Middle Road",
+  pace: "轻松",
+  people: 2,
+  days: [
+    {
+      id: "day-1",
+      label: "Day 1",
+      date: "10/12",
+      weekday: "周一",
+      theme: "老城、花园与海湾夜色",
+      color: "var(--route-day-1)",
+      summary: "4 个地点 · 交通 54 分钟 · 步行 4.8 km",
+      stops: [
+        { id: "hotel-1", name: "Bugis 酒店", area: "Bugis", time: "09:30", endTime: "09:30", duration: "出发", kind: "hotel", x: 44, y: 35, verified: true, note: "从酒店大堂出发" },
+        { id: "haji-lane", name: "哈芝巷", area: "Kampong Glam", time: "09:42", endTime: "10:45", duration: "1 小时", kind: "sight", x: 49, y: 31, verified: true, note: "清晨人少，适合街区漫步与拍照" },
+        { id: "sultan-mosque", name: "苏丹回教堂", area: "Kampong Glam", time: "10:53", endTime: "11:35", duration: "42 分钟", kind: "sight", x: 52, y: 29, verified: true, note: "进入礼拜空间前留意着装要求" },
+        { id: "gardens-bay", name: "滨海湾花园", area: "Marina Bay", time: "16:50", endTime: "19:10", duration: "2 小时 20 分", kind: "sight", x: 75, y: 64, verified: true, note: "傍晚入园，衔接灯光秀", warning: "温室门票与最后入场时间需出发前复核" },
+        { id: "marina-bay", name: "滨海湾夜景", area: "Marina Bay", time: "19:24", endTime: "21:00", duration: "1 小时 36 分", kind: "sight", x: 67, y: 55, verified: true, note: "沿海湾步道返回市中心" },
+      ],
+      legs: [
+        { from: "hotel-1", to: "haji-lane", mode: "walk", minutes: 12, distance: "0.8 km" },
+        { from: "haji-lane", to: "sultan-mosque", mode: "walk", minutes: 8, distance: "0.5 km" },
+        { from: "sultan-mosque", to: "gardens-bay", mode: "transit", minutes: 22, distance: "4.1 km" },
+        { from: "gardens-bay", to: "marina-bay", mode: "walk", minutes: 14, distance: "1.1 km" },
+      ],
+    },
+    {
+      id: "day-2",
+      label: "Day 2",
+      date: "10/13",
+      weekday: "周二",
+      theme: "建筑、熟食中心与河岸",
+      color: "var(--route-day-2)",
+      summary: "4 个地点 · 交通 51 分钟 · 步行 3.9 km",
+      stops: [
+        { id: "hotel-2", name: "Bugis 酒店", area: "Bugis", time: "09:40", endTime: "09:40", duration: "出发", kind: "hotel", x: 44, y: 35, verified: true, note: "今天晚一点出发" },
+        { id: "national-gallery", name: "新加坡国家美术馆", area: "Civic District", time: "09:54", endTime: "12:00", duration: "2 小时", kind: "sight", x: 56, y: 48, verified: true, note: "优先参观东南亚艺术常设展" },
+        { id: "maxwell", name: "麦士威熟食中心", area: "Chinatown", time: "12:18", endTime: "13:30", duration: "1 小时 12 分", kind: "food", x: 45, y: 64, verified: true, note: "午餐不锁定具体摊位，现场选择" },
+        { id: "artscience", name: "艺术科学博物馆", area: "Marina Bay", time: "14:06", endTime: "16:00", duration: "1 小时 54 分", kind: "sight", x: 68, y: 58, verified: true, note: "展览内容按旅行日期再确认", warning: "当前展览信息为行程假设" },
+        { id: "clarke-quay", name: "克拉码头", area: "Singapore River", time: "16:18", endTime: "18:20", duration: "2 小时", kind: "sight", x: 48, y: 53, verified: true, note: "河岸散步，晚餐可在附近临时选择" },
+      ],
+      legs: [
+        { from: "hotel-2", to: "national-gallery", mode: "transit", minutes: 14, distance: "2.3 km" },
+        { from: "national-gallery", to: "maxwell", mode: "transit", minutes: 18, distance: "2.7 km" },
+        { from: "maxwell", to: "artscience", mode: "transit", minutes: 19, distance: "3.2 km" },
+        { from: "artscience", to: "clarke-quay", mode: "walk", minutes: 18, distance: "1.4 km" },
+      ],
+    },
+    {
+      id: "day-3",
+      label: "Day 3",
+      date: "10/14",
+      weekday: "周三",
+      theme: "植物园、旧宅与乌节路",
+      color: "var(--route-day-3)",
+      summary: "4 个地点 · 交通 48 分钟 · 步行 5.2 km",
+      stops: [
+        { id: "hotel-3", name: "Bugis 酒店", area: "Bugis", time: "09:20", endTime: "09:20", duration: "出发", kind: "hotel", x: 44, y: 35, verified: true, note: "带水和防晒用品" },
+        { id: "botanic-gardens", name: "新加坡植物园", area: "Tanglin", time: "09:48", endTime: "12:20", duration: "2 小时 32 分", kind: "sight", x: 24, y: 31, verified: true, note: "从 Tanglin Gate 进入，顺坡步行" },
+        { id: "dempsey", name: "Dempsey Hill", area: "Tanglin", time: "12:35", endTime: "14:10", duration: "1 小时 35 分", kind: "food", x: 20, y: 43, verified: true, note: "午餐与旧营房建筑漫步" },
+        { id: "emerald-hill", name: "Emerald Hill", area: "Orchard", time: "14:32", endTime: "15:40", duration: "1 小时", kind: "sight", x: 34, y: 43, verified: true, note: "保留安静的街区拍照时间" },
+        { id: "orchard", name: "乌节路自由活动", area: "Orchard", time: "15:48", endTime: "18:30", duration: "2 小时 42 分", kind: "buffer", x: 36, y: 46, verified: true, note: "可随时提前结束，不影响后续安排" },
+      ],
+      legs: [
+        { from: "hotel-3", to: "botanic-gardens", mode: "transit", minutes: 28, distance: "5.8 km" },
+        { from: "botanic-gardens", to: "dempsey", mode: "taxi", minutes: 15, distance: "2.1 km" },
+        { from: "dempsey", to: "emerald-hill", mode: "taxi", minutes: 13, distance: "3.4 km" },
+        { from: "emerald-hill", to: "orchard", mode: "walk", minutes: 8, distance: "0.6 km" },
+      ],
+    },
+    {
+      id: "day-4",
+      label: "Day 4",
+      date: "10/15",
+      weekday: "周四",
+      theme: "海岛上午与机场花园",
+      color: "var(--route-day-4)",
+      summary: "3 个地点 · 交通 1 小时 18 分 · 步行 3.1 km",
+      stops: [
+        { id: "hotel-4", name: "Bugis 酒店", area: "Bugis", time: "08:30", endTime: "08:30", duration: "退房", kind: "hotel", x: 44, y: 35, verified: true, note: "行李寄存后轻装出发" },
+        { id: "sentosa", name: "圣淘沙海岸步道", area: "Sentosa", time: "09:04", endTime: "11:30", duration: "2 小时 26 分", kind: "sight", x: 31, y: 83, verified: true, note: "不安排大型乐园，保留海边时间" },
+        { id: "hotel-pickup", name: "返回酒店取行李", area: "Bugis", time: "12:08", endTime: "12:30", duration: "22 分钟", kind: "hotel", x: 44, y: 35, verified: true, note: "预留办理与叫车时间" },
+        { id: "jewel", name: "星耀樟宜", area: "Changi", time: "13:10", endTime: "15:15", duration: "2 小时", kind: "sight", x: 89, y: 39, verified: true, note: "与离境流程合并，不再折返市区", warning: "请按实际航班时间至少提前 3 小时进入机场流程" },
+      ],
+      legs: [
+        { from: "hotel-4", to: "sentosa", mode: "transit", minutes: 34, distance: "8.6 km" },
+        { from: "sentosa", to: "hotel-pickup", mode: "taxi", minutes: 38, distance: "9.3 km" },
+        { from: "hotel-pickup", to: "jewel", mode: "taxi", minutes: 40, distance: "18.7 km" },
+      ],
+    },
+  ],
+};
+
+export const planningPrompts = [
+  "我和伴侣两位成人，2026 年 12 月 20 日至 23 日去新加坡，住 Bugis 附近；每天 09:30 出发、21:00 回酒店，节奏轻松，喜欢建筑、美食和夜景。",
+  "2026 年 12月 20 日至 23 日，2 位成人，住 Bugis；每天 10:00 出发、20:30 回酒店，节奏轻松，酒店预算约 S$250/晚。",
+];
