@@ -4,7 +4,9 @@ import { guardSingaporeApi } from "@/lib/travel/api-guard";
 import { quotePoiCommerce } from "@/lib/travel/flyai";
 import { getSingaporePlaceDetails } from "@/lib/travel/google-maps";
 import { describeSingaporePlace } from "@/lib/travel/place-description";
+import { readTravelVisitToken } from "@/lib/travel/visit-session";
 import type { TravelCommerce } from "@/lib/travel/types";
+import { planningSceneRole } from "@/lib/travel/planning-scene-role";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +39,9 @@ function unavailable(note: string): TravelCommerce {
   };
 }
 
-function isRestaurantOrFoodVenue(place: { types?: string[]; primaryType?: string | null }) {
+function isRestaurantOrFoodVenue(place: { name: string; types?: string[]; primaryType?: string | null }) {
   const types = [place.primaryType || "", ...(place.types || [])].join(" ").toLowerCase();
-  return /restaurant|cafe|coffee_shop|bakery|bar|meal_takeaway|food/.test(types);
+  return planningSceneRole(place) !== "attraction" || /restaurant|cafe|coffee_shop|bakery|bar|meal_takeaway|food/.test(types);
 }
 
 /**
@@ -54,6 +56,10 @@ export async function POST(request: NextRequest) {
     windowMs: 5 * 60_000,
   });
   if (blocked) return blocked;
+  const visitToken = readTravelVisitToken(request);
+  if (!visitToken) {
+    return noStoreJson({ error: "本次访问未初始化，请刷新页面后重试。", code: "VISIT_REQUIRED" }, 400);
+  }
 
   let body: unknown;
   try {
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
       address: place.address,
       category: description.categoryLabel,
       visitDate: parsed.data.visitDate,
+      visitToken,
     });
     return noStoreJson({
       placeId: place.placeId,

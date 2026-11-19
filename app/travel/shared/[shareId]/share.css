@@ -1,0 +1,7 @@
+.tw-shared-trip { min-height: 100dvh; background: #f4f1e8; color: #172722; }
+.tw-shared-nav { min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem clamp(1rem, 5vw, 5rem); border-bottom: 1px solid #ddd7c8; background: #fffdfa; }
+.tw-shared-nav a { text-decoration: none; color: inherit; }
+.tw-shared-plan-link { border-radius: 999px; padding: .65rem .9rem; background: #ed6648; color: #fff !important; font-weight: 750; }
+.tw-shared-content { width: min(100%, 76rem); margin: auto; padding: clamp(1rem, 4vw, 3rem); }
+.tw-shared-footer { margin: 1rem 0; color: #50655d; font-size: .85rem; }
+@media print { .tw-shared-nav { display: none; }.tw-shared-trip { background: #fff; } }

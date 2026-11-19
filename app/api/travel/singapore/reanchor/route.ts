@@ -12,6 +12,8 @@ import {
   type SingaporeRoute,
 } from "@/lib/travel/google-maps";
 import { describeSingaporePlace } from "@/lib/travel/place-description";
+import { schedulePlanningDay } from "@/lib/travel/planning-scheduler";
+import { PlanningScheduleError, recalculateNextDayDepartureTransfer } from "@/lib/travel/planning-trip";
 import type {
   AccommodationSegment,
   ConfirmedAccommodationAnchor,
@@ -65,8 +67,11 @@ function isValidTrip(value: unknown): value is DemoTrip {
   if (!Array.isArray(trip.days) || trip.days.length < 1 || trip.days.length > 7) return false;
   return trip.days.every((day, index) => {
     if (!day || day.id !== `day-${index + 1}` || !Array.isArray(day.stops) || !Array.isArray(day.legs)) return false;
-    if (day.stops.length < 3 || day.stops.length > 9 || day.legs.length > 8) return false;
-    if (day.stops[0]?.kind !== "hotel" || day.stops.at(-1)?.kind !== "hotel") return false;
+    if (day.stops.length < 2 || day.stops.length > 11 || day.legs.length > 10) return false;
+    const start = day.stops[0];
+    const end = day.stops.at(-1);
+    const airport = (stop: TripStop | undefined) => Boolean(stop?.kind === "other" && stop.verified && stop.placeId && /机场|airport/i.test(`${stop.categoryLabel || ""} ${stop.name}`));
+    if (!(start?.kind === "hotel" || airport(start)) || !(end?.kind === "hotel" || airport(end))) return false;
     return day.stops.every((stop) => Boolean(text(stop.id, 120) && text(stop.name, 180) && inSingapore(stop)));
   });
 }
@@ -310,6 +315,33 @@ async function reanchorDay(day: TripDay, startPlace: SingaporePlace, endPlace: S
   return { ...day, returnBy, stops: scheduled, legs, summary: prefix ? `${prefix} · ${metrics}` : metrics };
 }
 
+async function reanchorPlanningDay(day: TripDay, startPlace: SingaporePlace, endPlace: SingaporePlace) {
+  const oldStart = day.stops[0];
+  const oldEnd = day.stops.at(-1)!;
+  const airportStart = oldStart.kind === "other";
+  const airportEnd = day.terminalKind === "airport";
+  const start = airportStart ? oldStart : accommodationStop(startPlace, oldStart.id, false, startPlace.placeId !== endPlace.placeId);
+  const end = airportEnd ? oldEnd : accommodationStop(endPlace, oldEnd.id, true, startPlace.placeId !== endPlace.placeId);
+  const interior = day.stops.slice(1, -1).filter((stop) => stop.kind !== "buffer").map((stop) =>
+    stop.kind === "hotel" ? accommodationStop(endPlace, stop.id, false, false) : stop);
+  const orderedStops = [start, ...interior, end];
+  const requestedVisitMinutes = Object.fromEntries(interior.map((stop) => [stop.id, stop.kind === "hotel" ? 45 : visitMinutes(stop)]));
+  const modes = orderedStops.slice(0, -1).map((stop, index) => {
+    const next = orderedStops[index + 1];
+    return day.legs.find((leg) => leg.from === stop.id && leg.to === next.id)?.mode || "taxi" as TravelMode;
+  });
+  const returnBy = validClock(day.returnBy || oldEnd.time, "21:00");
+  const scheduled = await schedulePlanningDay({
+    day, orderedStops, startTime: validClock(oldStart.time, "09:30"), returnBy,
+    requestedVisitMinutes, modes,
+  });
+  if (scheduled.metrics.overtimeMinutes > 0) {
+    throw new GoogleMapsServiceError("DAILY_WINDOW_TOO_SHORT",
+      `更换住宿后，${day.label} 预计晚于${airportEnd ? "机场" : "返店"}截止时间 ${scheduled.metrics.overtimeMinutes} 分钟；请先调整当天地点或交通方式。`, 422);
+  }
+  return scheduled.day;
+}
+
 function confirmedAccommodationAnchor(place: SingaporePlace): ConfirmedAccommodationAnchor {
   return {
     placeId: place.placeId,
@@ -407,6 +439,10 @@ export async function POST(request: NextRequest) {
     if (startIndex < 0) {
       return noStoreJson({ error: { code: "SEGMENT_DAY_NOT_FOUND", message: "没有找到要开始新住宿的日期。" } }, 422);
     }
+    const hotelNightCount = parsed.data.trip.days.length - (parsed.data.trip.days.at(-1)?.terminalKind === "airport" ? 1 : 0);
+    if (startIndex >= hotelNightCount) {
+      return noStoreJson({ error: { code: "NO_HOTEL_NIGHT", message: "离境日当天退房，没有新的住宿夜段；请从有住宿的日期选择换酒店。" } }, 422);
+    }
     const newAnchor = confirmedAccommodationAnchor(place);
     const currentSegments = normalizedSegments(parsed.data.trip);
     const segments = replaceSegment(currentSegments, startDayId, newAnchor);
@@ -425,16 +461,26 @@ export async function POST(request: NextRequest) {
       if (!affected.has(dayIndex)) return day;
       const startAnchor = anchorForDay(segments, Math.max(0, dayIndex - 1));
       const endAnchor = anchorForDay(segments, dayIndex);
-      return reanchorDay(day, placeFromAnchor(startAnchor), placeFromAnchor(endAnchor));
+      return day.terminalKind
+        ? reanchorPlanningDay(day, placeFromAnchor(startAnchor), placeFromAnchor(endAnchor))
+        : reanchorDay(day, placeFromAnchor(startAnchor), placeFromAnchor(endAnchor));
     });
     const primaryAnchor = segments[0].anchor;
     const hotelLabel = segments.length === 1 ? primaryAnchor.name : `多酒店住宿 · ${segments.length} 段`;
+    const departureTransfer = parsed.data.trip.departureTransfer
+      ? await recalculateNextDayDepartureTransfer(
+          parsed.data.trip.departureTransfer,
+          anchorForDay(segments, reroutedDays.length - 1),
+          reroutedDays.at(-1)?.stops.at(-1)?.time,
+        )
+      : undefined;
     const baseTrip: DemoTrip = {
       ...parsed.data.trip,
       hotel: hotelLabel,
       accommodationMode: "hotel",
       accommodationAnchor: primaryAnchor,
       accommodationSegments: segments,
+      ...(departureTransfer ? { departureTransfer } : {}),
       days: reroutedDays,
       generatedAt: new Date().toISOString(),
       commerce: undefined,
@@ -448,6 +494,9 @@ export async function POST(request: NextRequest) {
         : `已从 ${startDayId.replace("day-", "Day ")} 起安排 ${place.name}；换酒店日会从上一晚住宿出发并在新酒店结束，已重算受影响的路线。`,
     });
   } catch (error) {
+    if (error instanceof PlanningScheduleError) {
+      return noStoreJson({ error: { code: error.code, message: error.message } }, 422);
+    }
     const response = googleMapsErrorResponse(error);
     return noStoreJson(response.body, response.status);
   }

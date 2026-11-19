@@ -1,5 +1,7 @@
 declare namespace Cloudflare {
   interface Env {
+    DB?: D1Database;
+    BUCKET?: R2Bucket;
     GOOGLE_MAPS_BROWSER_KEY?: string;
     GOOGLE_MAPS_SERVER_KEY?: string;
     DASHSCOPE_API_KEY?: string;
@@ -9,6 +11,5 @@ declare namespace Cloudflare {
     BAILIAN_API_BASE_URL?: string;
     BAILIAN_AGENT_ID?: string;
     BAILIAN_ENVIRONMENT_ID?: string;
-    FLYAI_API_KEY?: string;
   }
 }

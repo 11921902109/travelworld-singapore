@@ -3,6 +3,7 @@
 /* Native anchors deliberately bypass the deployed Vinext client router. */
 /* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 
+import { cnyReferenceLabel } from "@/lib/travel/cny-price";
 import {
   useCallback,
   useEffect,
@@ -450,7 +451,7 @@ function CaseCommerceFooter({
       ? "固定 12/20 入住 · 12/24 离店 · 2 位成人"
       : "固定 12/20 到访 · 2 位成人";
   const title = isAvailable && price
-    ? `${kind === "hotel" ? "飞猪价格参考" : "飞猪景点商品"} · ${price.display}${price.unit ? ` · ${price.unit}` : ""}`
+    ? `${kind === "hotel" ? "飞猪价格参考" : "飞猪景点商品"} · ${cnyReferenceLabel(price)}`
     : state === "error"
       ? "飞猪报价暂时不可用"
       : state === "ready"

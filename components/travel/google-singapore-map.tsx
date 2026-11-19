@@ -30,8 +30,10 @@ export type GoogleSingaporeMapMarker = {
 export type GoogleSingaporeMapProps = {
   markers: readonly GoogleSingaporeMapMarker[];
   route?: readonly GoogleSingaporeMapPoint[];
+  routeSegments?: readonly (readonly GoogleSingaporeMapPoint[])[];
   selectedMarkerId?: string | null;
   onMarkerSelect?: (markerId: string) => void;
+  onMapClick?: (point: GoogleSingaporeMapPoint) => void;
   center?: GoogleSingaporeMapPoint;
   zoom?: number;
   routeColor?: string;
@@ -47,10 +49,12 @@ export type GoogleSingaporeMapProps = {
 type ListenerHandle = { remove: () => void };
 
 type MapInstance = {
+  addListener: (eventName: string, handler: (event: { latLng?: { lat: () => number; lng: () => number } }) => void) => ListenerHandle;
   fitBounds: (bounds: BoundsInstance, padding?: number) => void;
   panTo: (point: GoogleSingaporeMapPoint) => void;
   setCenter: (point: GoogleSingaporeMapPoint) => void;
   setZoom: (zoom: number) => void;
+  setOptions: (options: Record<string, unknown>) => void;
 };
 
 type MarkerInstance = {
@@ -231,8 +235,10 @@ function stateCopy(state: LoadState, detail: string) {
 export function GoogleSingaporeMap({
   markers,
   route = [],
+  routeSegments,
   selectedMarkerId = null,
   onMarkerSelect,
+  onMapClick,
   center = SINGAPORE_CENTER,
   zoom = 12,
   routeColor = "#f26444",
@@ -246,9 +252,10 @@ export function GoogleSingaporeMap({
 }: GoogleSingaporeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
-  const polylineRef = useRef<PolylineInstance | null>(null);
+  const polylinesRef = useRef<PolylineInstance[]>([]);
   const markersRef = useRef<Map<string, LiveMarker>>(new Map());
   const onMarkerSelectRef = useRef(onMarkerSelect);
+  const onMapClickRef = useRef(onMapClick);
   const fitSignatureRef = useRef("");
   const [api, setApi] = useState<GoogleMapsApi | null>(null);
   const [configuredMapId, setConfiguredMapId] = useState<string | undefined>();
@@ -260,11 +267,20 @@ export function GoogleSingaporeMap({
     () => markers.map(resolveMarker).filter((marker): marker is ResolvedMarker => marker !== null),
     [markers],
   );
-  const validRoute = useMemo(() => route.filter(isPoint), [route]);
+  const validSegments = useMemo(
+    () => (routeSegments ?? [route]).map((segment) => segment.filter(isPoint)).filter((segment) => segment.length >= 2),
+    [route, routeSegments],
+  );
+  const routeBoundsPoints = useMemo(() => validSegments.flat(), [validSegments]);
 
   useEffect(() => {
     onMarkerSelectRef.current = onMarkerSelect;
   }, [onMarkerSelect]);
+
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+    mapRef.current?.setOptions({ draggableCursor: onMapClick ? "crosshair" : "grab" });
+  }, [onMapClick]);
 
   useEffect(() => {
     let active = true;
@@ -341,18 +357,27 @@ export function GoogleSingaporeMap({
     if (resolvedMapId) options.mapId = resolvedMapId;
 
     const map = new api.Map(containerRef.current, options);
+    const clickListener = map.addListener("click", (event) => {
+      const latLng = event.latLng;
+      if (!latLng || !onMapClickRef.current) return;
+      const point = { lat: latLng.lat(), lng: latLng.lng() };
+      if (isPoint(point)) onMapClickRef.current(point);
+    });
+    if (onMapClickRef.current) map.setOptions({ draggableCursor: "crosshair" });
     const liveMarkers = markersRef.current;
     mapRef.current = map;
     setLoadState("ready");
 
     return () => {
+      clickListener.remove();
       liveMarkers.forEach(({ instance, listener }) => {
         listener.remove();
         instance.setMap(null);
       });
       liveMarkers.clear();
-      polylineRef.current?.setMap(null);
-      polylineRef.current = null;
+      polylinesRef.current.forEach((line) => line.setMap(null));
+      polylinesRef.current = [];
+      fitSignatureRef.current = "";
       api.event.clearInstanceListeners(map);
       mapRef.current = null;
     };
@@ -402,34 +427,64 @@ export function GoogleSingaporeMap({
       liveMarker.instance.setZIndex(selected ? 1000 : 100 + index);
     });
 
-    if (validRoute.length >= 2) {
-      if (!polylineRef.current) {
-        polylineRef.current = new api.Polyline({
+    polylinesRef.current.splice(validSegments.length).forEach((line) => line.setMap(null));
+    validSegments.forEach((segment, index) => {
+      let line = polylinesRef.current[index];
+      if (!line) {
+        line = new api.Polyline({
           map,
           geodesic: true,
           clickable: false,
           strokeOpacity: 0.92,
         });
+        polylinesRef.current[index] = line;
       }
-      polylineRef.current.setMap(map);
-      polylineRef.current.setPath(validRoute);
-      polylineRef.current.setOptions({ strokeColor: routeColor, strokeWeight: 5 });
-    } else {
-      polylineRef.current?.setMap(null);
-    }
+      line.setPath(segment);
+      line.setOptions({ strokeColor: routeColor, strokeWeight: 5 });
+    });
 
     const fitSignature = JSON.stringify({
       markers: validMarkers.map(({ id, position }) => [id, position.lat, position.lng]),
-      route: validRoute.map((point) => [point.lat, point.lng]),
+      route: validSegments,
     });
     if (autoFit && fitSignature !== fitSignatureRef.current) {
       const bounds = new api.LatLngBounds();
       validMarkers.forEach((marker) => bounds.extend(marker.position));
-      validRoute.forEach((point) => bounds.extend(point));
+      routeBoundsPoints.forEach((point) => bounds.extend(point));
       if (!bounds.isEmpty()) map.fitBounds(bounds, 54);
       fitSignatureRef.current = fitSignature;
     }
-  }, [api, autoFit, configuredMapId, mapId, routeColor, selectedMarkerId, validMarkers, validRoute]);
+  }, [api, autoFit, configuredMapId, mapId, routeBoundsPoints, routeColor, selectedMarkerId, validMarkers, validSegments]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!api || !container || !mapRef.current || typeof ResizeObserver === "undefined") return;
+    let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+    let previousSize = `${container.clientWidth}x${container.clientHeight}`;
+    const observer = new ResizeObserver(() => {
+      const size = `${container.clientWidth}x${container.clientHeight}`;
+      if (size === previousSize || !container.clientWidth || !container.clientHeight) return;
+      previousSize = size;
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (autoFit) {
+          const bounds = new api.LatLngBounds();
+          validMarkers.forEach((marker) => bounds.extend(marker.position));
+          routeBoundsPoints.forEach((point) => bounds.extend(point));
+          if (!bounds.isEmpty()) map.fitBounds(bounds, 54);
+        } else {
+          map.setCenter(isPoint(center) ? center : SINGAPORE_CENTER);
+        }
+      }, 140);
+    });
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      if (resizeTimer) clearTimeout(resizeTimer);
+    };
+  }, [api, autoFit, center, routeBoundsPoints, validMarkers]);
 
   useEffect(() => {
     if (!panToSelected || !selectedMarkerId || !mapRef.current) return;

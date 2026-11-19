@@ -502,6 +502,12 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
       );
     }
     const durationDays = integer(intent.durationDays);
+    if (dateDays > 7) {
+      return noStoreJson(
+        { error: { code: "TRIP_TOO_LONG", message: `这段日期按自然日计算共 ${dateDays} 天；目前支持规划 1–7 天。请缩短日期范围后再试。` } },
+        422,
+      );
+    }
     if (durationDays === null || durationDays < 1 || durationDays > 7 || dateDays > 7) {
       return noStoreJson(
         { error: { code: "INVALID_DURATION", message: "新加坡第一版支持 1–7 天行程。" } },
@@ -556,6 +562,11 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
         400,
       );
     }
+    const requestedPreferredReturn = validClock(text(intent.preferredReturnTime, 5), dailyEndTime);
+    const preferredReturnMinutes = clockMinutes(requestedPreferredReturn) > clockMinutes(dailyStartTime)
+      && clockMinutes(requestedPreferredReturn) <= clockMinutes(dailyEndTime)
+      ? clockMinutes(requestedPreferredReturn)
+      : clockMinutes(dailyEndTime);
     const availableMinutes = clockMinutes(dailyEndTime) - clockMinutes(dailyStartTime);
     const perDay = Math.max(
       1,
@@ -614,10 +625,17 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
       const anchorDescription = "当天路线的出发酒店，也是当天行程结束后的返回地点。";
       let cursor = clockMinutes(dailyStartTime);
       const travelMinutesForDay = dayRoutes.reduce((sum, route) => sum + route.durationMinutes, 0);
+      const standardFinish = cursor + travelMinutesForDay
+        + candidates.reduce((sum, candidate) => sum + visitMinutes(candidate.kind, pace), 0);
+      const returnMinutes = Math.min(
+        clockMinutes(dailyEndTime),
+        Math.max(preferredReturnMinutes, standardFinish),
+      );
+      const dailyReturnTime = formatClock(returnMinutes);
       const visitDurations = fittedVisitMinutes(
         candidates,
         pace,
-        clockMinutes(dailyEndTime) - clockMinutes(dailyStartTime) - travelMinutesForDay,
+        returnMinutes - clockMinutes(dailyStartTime) - travelMinutesForDay,
       );
       if (!visitDurations) {
         throw new GoogleMapsServiceError(
@@ -708,7 +726,7 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
       });
 
       const returnRoute = dayRoutes[dayRoutes.length - 1];
-      const returnDeparture = clockMinutes(dailyEndTime) - returnRoute.durationMinutes;
+      const returnDeparture = returnMinutes - returnRoute.durationMinutes;
       const availableBuffer = returnDeparture - cursor;
       let bufferStopId: string | null = null;
       if (availableBuffer >= 15) {
@@ -726,7 +744,7 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
           x: previous.x,
           y: previous.y,
           verified: true,
-          note: `为严格在 ${dailyEndTime} 返回酒店预留的可自由安排时段。`,
+          note: `为在 ${dailyReturnTime} 返回酒店预留的可自由安排时段。`,
           categoryLabel: "行程缓冲",
           description: "可用于用餐、散步或在附近自由停留；不虚构为收费景点。",
           ...(previous.lat !== undefined ? { lat: previous.lat } : {}),
@@ -741,7 +759,7 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
       } else if (availableBuffer < 0) {
         throw new GoogleMapsServiceError(
           "DAILY_WINDOW_TOO_SHORT",
-          `${outlineDay.theme} 无法在 ${dailyEndTime} 前返回酒店。请减少地点或延后返回时间。`,
+          `${outlineDay.theme} 无法在 ${dailyReturnTime} 前返回酒店。请减少地点或延后返回时间。`,
           422,
         );
       }
@@ -749,8 +767,8 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
         id: returnHotelId,
         name: `返回 ${resolvedAnchor.label}`,
         area: anchor.address,
-        time: dailyEndTime,
-        endTime: dailyEndTime,
+        time: dailyReturnTime,
+        endTime: dailyReturnTime,
         duration: "返回酒店",
         kind: "hotel",
         ...anchorPoint,
@@ -795,7 +813,7 @@ export async function buildSingaporePlanResponse(body: Record<string, unknown>) 
         theme: outlineDay.theme,
         color: colors[dayIndex],
         summary: `${outlineDay.summary} · ${candidates.length} 个真实地点 · 交通 ${travelMinutes} 分钟 · ${(distanceMeters / 1000).toFixed(1)} km`,
-        returnBy: dailyEndTime,
+        returnBy: dailyReturnTime,
         stops,
         legs,
       };

@@ -48,10 +48,6 @@ next-env.d.ts
 *.tsbuildinfo
 ~$*.docx
 /work/
-/.openai/*
-!/.openai/hosting.json
-*.tar.gz
-*.docx
-*.pdf
 # Locally generated Site deployment bundles are uploaded separately and should not enter source control.
 .openai/*.tar.gz
+/.site-package-*.tar.gz

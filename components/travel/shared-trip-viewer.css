@@ -1,0 +1,44 @@
+.tw-share-viewer { color: #172722; min-width: 0; }
+.tw-share-heading { margin-bottom: 1.2rem; overflow-wrap: anywhere; }
+.tw-share-heading > small { color: #14735d; font: 700 .78rem/1.4 ui-monospace, monospace; letter-spacing: .08em; }
+.tw-share-heading h1, .tw-share-heading h2 { margin: .45rem 0; font-size: clamp(1.75rem, 4vw, 3.2rem); line-height: 1.14; }
+.tw-share-heading > p { margin: .55rem 0; color: #50655d; }
+.tw-share-heading .tw-share-scope { display: inline-block; padding: .55rem .8rem; border-radius: .65rem; background: #e3eee9; color: #245848; font-size: .86rem; }
+.tw-share-notes { margin-top: .4rem; color: #50655d; font-size: .87rem; }
+.tw-share-day-nav { display: flex; gap: .5rem; overflow-x: auto; padding: .2rem .2rem .7rem; }
+.tw-share-day-nav button { flex: 0 0 auto; display: grid; gap: .2rem; padding: .65rem .9rem; border: 1px solid #d8dfd4; border-radius: .65rem; background: #fffdfa; color: #254a3d; text-align: left; }
+.tw-share-day-nav button[aria-pressed="true"] { color: #fff; border-color: #12634f; background: #12634f; }
+.tw-share-day-content { padding: clamp(.8rem, 2vw, 1.4rem); border: 1px solid #ddd7c8; border-radius: 1rem; background: #fffdfa; }
+.tw-share-day-content > header h3 { margin: 0; font-size: 1.25rem; }
+.tw-share-day-content > header p { margin: .35rem 0 1rem; color: #50655d; line-height: 1.6; overflow-wrap: anywhere; }
+.tw-share-day-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem; }
+.tw-share-day-grid h4 { margin: 0 0 .65rem; font-size: 1rem; }
+.tw-share-map { min-height: 21rem; border-radius: .75rem; overflow: hidden; }
+.tw-share-map-panel > p, .tw-share-map-empty, .tw-share-boundary { color: #50655d; font-size: .84rem; line-height: 1.6; }
+.tw-share-map-empty { display: grid; min-height: 9rem; place-content: center; gap: .5rem; padding: 1rem; border: 1px dashed #c5d1c9; border-radius: .75rem; background: #f0f4ed; text-align: center; }
+.tw-share-map-empty p, .tw-share-boundary { margin: 0 0 .45rem; }
+.tw-share-places ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.tw-share-place, .tw-share-transfer { border: 1px solid #e4dfd1; border-radius: .75rem; background: #f8f6ef; padding: .75rem; overflow-wrap: anywhere; }
+.tw-share-place[data-selected] { border-color: #207159; }
+.tw-share-place .tw-item-copy { display: grid; gap: .35rem; }
+.tw-share-leg { margin: .2rem .35rem .45rem; color: #39705f; font-size: .8rem; }
+.tw-share-transfer { margin-top: .8rem; }
+.tw-share-transfer p, .tw-share-place-details p { margin: .3rem 0; color: #50655d; font-size: .84rem; }
+.tw-share-place-details { margin-top: .45rem; }
+.tw-share-place button { margin-top: .5rem; }
+.tw-share-secondary, .tw-share-primary { border: 1px solid #c5d1c9; border-radius: .55rem; padding: .45rem .65rem; color: #245848; background: #fffdfa; cursor: pointer; }
+.tw-share-primary { border-color: #12634f; background: #12634f; color: #fff; font-weight: 700; }
+.tw-share-dialog button:disabled { cursor: default; opacity: .55; }
+.tw-share-dialog { width: min(65rem, calc(100vw - 2rem)); max-height: min(90dvh, 62rem); margin: auto; padding: 0; border: 1px solid #d5ddcf; border-radius: 1rem; background: #f4f1e8; color: #172722; overflow: auto; }
+.tw-share-dialog::backdrop { background: rgb(18 36 29 / .55); }
+.tw-share-dialog-shell { display: grid; gap: 1rem; padding: clamp(.9rem, 2vw, 1.5rem); }
+.tw-share-dialog-header, .tw-share-dialog-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem; }
+.tw-share-dialog-header h2 { margin: 0; font-size: 1.4rem; }
+.tw-share-dialog-description, .tw-share-dialog-status { margin: 0; color: #50655d; line-height: 1.55; }
+.tw-share-dialog label.tw-share-option { display: flex; align-items: center; gap: .55rem; color: #254a3d; }
+.tw-share-link-result { display: grid; gap: .45rem; background: #e3eee9; padding: .7rem; border-radius: .65rem; }
+.tw-share-link-result input { width: 100%; min-width: 0; padding: .45rem; border: 1px solid #c5d1c9; border-radius: .35rem; color: #172722; background: #fffdfa; }
+@media (max-width: 720px) {
+  .tw-share-day-grid { grid-template-columns: 1fr; }
+  .tw-share-map { min-height: 15rem; }
+}

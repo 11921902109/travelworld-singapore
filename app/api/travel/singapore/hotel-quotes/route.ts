@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSingaporePlaceDetails } from "@/lib/travel/google-maps";
 import { guardSingaporeApi } from "@/lib/travel/api-guard";
 import { quoteHotelCommerceBatch } from "@/lib/travel/flyai";
+import { readTravelVisitToken } from "@/lib/travel/visit-session";
 import { SingaporeTravelIntentSchema } from "@/lib/travel/singapore-intent";
 import type { TravelCommerce } from "@/lib/travel/types";
 
@@ -55,6 +56,10 @@ export async function POST(request: NextRequest) {
     windowMs: 5 * 60_000,
   });
   if (blocked) return blocked;
+  const visitToken = readTravelVisitToken(request);
+  if (!visitToken) {
+    return noStoreJson({ error: "本次访问未初始化，请刷新页面后重试。", code: "VISIT_REQUIRED" }, 400);
+  }
 
   let rawBody: unknown;
   try {
@@ -89,8 +94,8 @@ export async function POST(request: NextRequest) {
     }
   }));
 
-  // All verified candidates share one temporary Agent session. FlyAI is asked
-  // sequentially inside that session, while every returned offer is mapped back
+  // All verified candidates share one Agent turn. FlyAI is asked sequentially
+  // inside that turn, while every returned offer is mapped back
   // to its original Google Place ID before it reaches the browser.
   const commerceByPlace = await quoteHotelCommerceBatch(
     intent,
@@ -101,6 +106,7 @@ export async function POST(request: NextRequest) {
         name: item.place!.name,
         address: item.place!.address,
       })),
+    visitToken,
   );
   const quotes = verified.map((item) => ({
     placeId: item.placeId,
