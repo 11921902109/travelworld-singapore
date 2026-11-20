@@ -2,41 +2,37 @@
 
 > 将一切交给对话
 
-用一句话说明旅行愿望，减少反复填写条件和在不同工具之间切换的时间。Travelworld 从自然语言中整理出行条件，再陪用户挑地点、排日期、选住宿，直到行程可以在地图上核对。新加坡是首个完整目的地。当前公开源码对应在线版 V40。
+Travelworld 是面向新加坡自由行的 AI 旅行客服。从一句话开始，协助用户完成 **1–7 天**的行程规划。当前公开版本为 **V40**。
 
-## 在线体验
+[开始在线规划](https://hello-travel-26915.vocal-fern-4292.chatgpt.site/travel/new) · [完整四日图解（38 张图）](./docs/singapore-walkthrough.md) · [问题与版本演进](./record.md) · [修复、验证和发布记录](./fix.md)
 
-- [Travelworld 首页](https://hello-travel-26915.vocal-fern-4292.chatgpt.site/travel)
-- [新加坡四日案例](https://hello-travel-26915.vocal-fern-4292.chatgpt.site/travel/demo-singapore#case-walkthrough)
-- [创建自己的行程](https://hello-travel-26915.vocal-fern-4292.chatgpt.site/travel/new)
-- [四日案例图解](./docs/singapore-walkthrough.md) · [问题与改进方案](./record.md) · [修复及发布记录](./fix.md)
+## 旅行客服怎么工作
 
-打开「创建自己的行程」，输入下面的例子，或者换成未来的 1–7 天日期。
+1. **意图理解。** 用户可以用自己的话说明想怎么旅行。客服把日期、人数、预算、节奏和时段整理成可核对的条件，区分「希望晚上九点回酒店」与「最晚九点必须回酒店」，并针对缺失或含糊的条件继续追问。
+2. **理解后的行动。** 用户确认条件后，系统据此推荐和核实地点，协助分天、录入航班、比较住宿，并按营业时段、交通和机场预留核算每天的安排。遇到冲突会说明影响并给出调整入口。用户确认后即可生成地图，并可创建只读分享链接。
 
-> 我和伴侣两位成人，2026 年 12 月 20 日至 23 日去新加坡，住 Bugis 附近。每天 09:30 出发、21:00 回酒店，节奏轻松，喜欢建筑、美食和夜景。
+## 当前体验
 
-## 从条件到地图
-
-| 阶段 | 可以做什么 |
+| 阶段 | 用户可以做什么 |
 | --- | --- |
-| 意图理解 | 保留本次访问已确认的条件，只追问缺失或含糊之处。结构化结果继续由日期、预算和时段规则校验。 |
-| 挑地点与分天 | 查看根据偏好推荐、经 Google Places 核实的地点，搜索其他景点，把地点安排到对应日期的上午或下午。 |
-| 航班与住宿 | 按需查航班、录入已订时刻，或跳过航班。按分天安排比较住宿区域，再用 Google Places 查具体酒店，按酒店和入住日期获取飞猪价格参考。 |
-| 逐日核算 | 核对活动、交通、开放窗口和留白。可添加用餐、休息和自定义安排。首日可改结束时间，末日可改出发时间，航班边界仍参与核算。存在多个冲突时可在同一预览连续调整，所有受影响日期通过后一次确认。 |
-| 地图与分享 | 查看路线和地点详情，按路段切换交通方式，或生成只读分享。住宿信息可按分享设置隐藏。 |
+| 对话确认条件 | 用一句话说明旅行愿望。页面列出已识别的条件，助手针对缺失或含糊的信息继续追问。 |
+| 挑地点、按天安排 | 从真实候选中挑选地点，把每一站放入指定日期的上午或下午，也可确认保留自由日。 |
+| 确认航班与住宿 | 可录入已订航班的当地起降时刻，或查询航班参考。住宿可比较全程同住和分段住宿，再按区域和预算选择酒店。 |
+| 核算和修改 | 按日期查看营业、交通、机场预留及活动余量。在同一份预览中连续处理多处冲突，所有受影响日期通过后一次保存。首日可改当地结束时间，末日可改当地出发时间。 |
+| 地图与分享 | 按天查看地面路线、预计耗时和地点详情。可按路段切换交通方式、就当天行程提问，或创建 30 天有效的只读分享链接。 |
 
-分阶段规划时，左侧的「需要帮助」展示当前阶段三个可直接点选的问题，也接受自定义提问。回复基于已确认的条件和进度，行程编辑在各阶段各自的操作项中完成。
+分阶段规划中的「需要帮助」会随当前步骤提供三个可点问题，例如「还有哪些地点没安排到某一天？」。帮助解释已确认的条件和进度，行程修改通过各阶段的表单或选项保存。
 
-## 技术与数据来源
+## 数据与技术
 
-- **阿里云百炼 Managed Agent** 在运行时参与复杂意图理解、地点候选建议、住宿规划和阶段答疑。明确且可校验的输入可走本地规则。意图、规划任务和帮助使用各自的会话用途，在同一次访问内按用途复用。
-- **Google Places API（New）** 提供真实地点的名称、坐标、类别和常规开放信息。**Google Routes API** 核算交通，**Maps JavaScript API** 渲染地图。
-- **FlyAI／飞猪** 通过百炼 Agent 中的 Skill 补充航班查询和酒店／景点商品参考。价格与可订状态以供应方页面为准。餐厅保留地点信息。
-- **Next.js 路由、React、TypeScript、Vite／Vinext、Cloudflare Workers、D1 与 Drizzle** 提供应用和服务端的持久化与运行环境。会话、规划状态和分享快照使用 D1。
+- **阿里云百炼 Managed Agent** 在运行时参与复杂意图理解、候选建议和答疑。可明确校验的日期、人数等字段也可以由本地规则处理。服务端保存已确认条件，并按实际约束核对方案。
+- **Google Places API（New）** 提供地点身份、坐标和常规开放信息。**Google Routes API** 计算地面路线和耗时，**Maps JavaScript API** 渲染地图。
+- **FlyAI／飞猪** 提供航班查询与酒店、景点的商品和价格参考。酒店先由 Google Places 按片区找候选，再按具体酒店和入住日期向飞猪查询。最终价格与可订状态以供应方页面为准。
+- **Next.js 路由、React、TypeScript、Vite／Vinext、Cloudflare Workers、D1 和 Drizzle** 提供页面、服务端接口及规划状态与分享快照的持久化。
 
-## 本地运行
+## 本地复现
 
-需要 Node.js 22.13+ 和 `package.json` 中指定的 pnpm 版本。先安装锁定依赖并构建。应用含服务端接口，在线版托管在 ChatGPT Sites。
+需要 Node.js 22.13 或更新版本，以及 `package.json` 指定的 pnpm 版本。先安装锁定依赖并构建。
 
 ```sh
 pnpm install --frozen-lockfile
@@ -45,17 +41,17 @@ npm run build
 
 ### 无密钥检查
 
-以下定向测试使用合成数据和服务桩，覆盖意图规则、规划状态、批量冲突预览、到达时间及分享。构建和测试都可以填空凭据运行。
+以下定向测试使用合成数据和模拟服务，覆盖意图理解、规划状态、多地点冲突、时间编辑和只读分享。
 
 ```sh
 node --test --test-concurrency=1 tests/intent-fast-path.test.mjs tests/singapore-intent.test.mjs tests/planning-state.test.mjs tests/planning-conflicts.test.mjs tests/schedule-time-arrivals.test.mjs tests/shared-trip.test.mjs
 ```
 
-### 接入自己的服务
+### 接入真实服务
 
-1. 用自己的阿里云百炼工作空间部署 Managed Agent，填入 `DASHSCOPE_API_KEY`、`BAILIAN_API_BASE_URL`、`BAILIAN_AGENT_ID` 和 `BAILIAN_ENVIRONMENT_ID`。需要飞猪报价或查询时，在 Agent 安装并配置 FlyAI Skill。`FLYAI_API_KEY` 仅用于服务端。
-2. 启用 Google Places API（New）、Routes API 和 Maps JavaScript API。为 `GOOGLE_MAPS_SERVER_KEY` 配置服务端权限，为浏览器可见的 `GOOGLE_MAPS_BROWSER_KEY` 限制 HTTP 来源和 API。
-3. 从 [`.env.example`](./.env.example) 复制出本地 `.dev.vars`，仅在本地填写凭据。给新建本地数据库依次执行 `drizzle/` 下的所有 SQL，再启动 Worker。`dist/server/wrangler.json` 由构建生成，`DB` 是本地绑定名。
+1. 复制 [`.env.example`](./.env.example) 为本地 `.dev.vars`。配置自己的百炼工作空间、Managed Agent 和 Google Maps API 凭据。需要查询飞猪时，在 Agent 中安装并配置 FlyAI Skill。
+2. Google 服务端凭据用于 Places 与 Routes。浏览器地图密钥配置来源域名及 Maps JavaScript API 限制。服务端凭据仅保存于本地配置或部署平台的密钥管理。
+3. 生产构建会生成 `dist/server/wrangler.json`。新建本地 D1 数据库按文件名顺序执行 `drizzle/` 下的 SQL，绑定名为 `DB`。已有数据库只应用尚未执行的迁移。
 
 ```sh
 for file in drizzle/[0-9]*.sql; do
@@ -64,16 +60,24 @@ done
 npm start -- --env-file .dev.vars
 ```
 
-以上迁移循环适用于 Bash。Windows PowerShell 可用 `Get-ChildItem drizzle -Filter '*.sql' | Sort-Object Name` 列出文件，并按相同顺序将文件逐个传给 `--file`。已有本地库只执行尚未应用的迁移。启动后打开终端给出的本地地址，访问 `/travel`。仓库内的 Sites 项目标识为占位值，托管时使用自己的项目和服务端密钥管理。
+Windows PowerShell 可用同一套配置和迁移顺序。
 
-本次源码整理验证了生产构建、55 项定向测试和 16 个迁移文件在 SQLite 中的顺序执行。本地 Worker 环境和实时供应方调用仍需用自己的服务配置复现。
+```powershell
+Get-ChildItem drizzle -Filter '*.sql' | Sort-Object Name | ForEach-Object {
+  node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file $_.FullName
+  if ($LASTEXITCODE -ne 0) { throw "D1 migration failed: $($_.Name)" }
+}
+npm start -- --env-file .dev.vars
+```
 
-## 当前范围与未来工作
+打开终端给出的本地地址并访问 `/travel`。发布验证和各版本检查结果记在 [fix.md](./fix.md)。
 
-当前覆盖 1–7 天的新加坡规划。Google 提供的是常规开放信息，节假日安排宜以场馆公告为准。国际航班查询可能缺少某些方向或返回错误，已订时刻可手动录入。地图上展示的行程时间仍是估算。
+## 已知范围与后续方向
 
-1. **扩展目的地。** 将新加坡的地点检索、区域词表和交通约束拆成可配置的目的地规则。
-2. **加强按日意图理解。** 从旅行总偏好进一步识别每一天的必去、避开、时段和留白要求，减少重复追问。
-3. **增强可核验的调整建议。** 将营业窗口、交通、首末日约束与用户偏好放在同一份候选比较中，说明每项调整的原因和影响。
+景点开放信息为常规时段，实际安排可查场馆公告。国际航班参考查询可能出现缺少结果或接口错误，已订航班可手动录入。地面交通和到达时刻为规划估算。
 
-新加坡案例中的摄影素材及许可见 [图片署名](./TRAVEL_CASE_IMAGE_CREDITS.md)。
+1. **扩展目的地。** 将地点检索、区域词表和交通规则拆成可配置的目的地规则。
+2. **增强按日意图理解。** 在旅行整体偏好之外，进一步识别某天的必去、避开、时段和留白要求。
+3. **改进调整建议。** 结合营业窗口、交通和首末日限制，解释各个调整如何影响当天和跨天路线。
+
+[案例图片署名](./TRAVEL_CASE_IMAGE_CREDITS.md) · [参赛 Issue #206](https://github.com/modelstudioai/modelstudioai.github.io/issues/206)
